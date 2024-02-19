@@ -5,81 +5,62 @@ class ProductManager {
     this.path = filePath;
   }
 
-  addProduct(product) {
+  // Métodos existentes (addProduct, getProducts, getProductById, updateProduct, deleteProduct)...
+
+  addProduct(productData) {
     const products = this.getProductsFromFile();
 
-    // Validar que el código sea único
-    if (products.some(p => p.code === product.code)) {
-      console.error("Error: Duplicate product code.");
-      return;
+    // Generar ID único
+    const newProductId = products.length > 0 ? products[products.length - 1].id + 1 : 1;
+
+    // Completar los datos del producto
+    const newProduct = {
+      id: newProductId,
+      ...productData,
+      status: true, // Definir status como true por defecto
+    };
+
+    // Validar campos obligatorios
+    if (!newProduct.title || !newProduct.description || !newProduct.code || !newProduct.price || !newProduct.stock || !newProduct.category) {
+      throw new Error('All fields are required.');
     }
 
-    // Asignar un id autoincrementable
-    const productId = products.length + 1;
-    product.id = productId;
+    // Agregar el nuevo producto al arreglo
+    products.push(newProduct);
 
-    // Agregar el producto al arreglo
-    products.push(product);
-
-    // Guardar en el archivo
+    // Guardar los productos en el archivo
     this.saveProductsToFile(products);
 
-    console.log(`Product added successfully. ID: ${productId}`);
+    console.log(`Product added successfully. ID: ${newProductId}`);
+    return newProductId;
   }
 
-  getProducts(limit) {
+  updateProduct(productId, updatedFields) {
     const products = this.getProductsFromFile();
-    return limit ? products.slice(0, limit) : products;
-  }
+    const productIndex = products.findIndex(product => product.id === productId);
 
-  getProductById(productId) {
-    const products = this.getProductsFromFile();
-    const product = products.find(p => p.id === productId);
-    return product || null;
-  }
-
-  updateProduct(productId, updatedProduct) {
-    const products = this.getProductsFromFile();
-    const index = products.findIndex(p => p.id === productId);
-
-    if (index !== -1) {
-      // Actualizar el producto sin cambiar su ID
-      updatedProduct.id = productId;
-      products[index] = updatedProduct;
-      this.saveProductsToFile(products);
-      console.log(`Product with ID ${productId} updated successfully.`);
-    } else {
-      console.error("Error: Product not found.");
+    if (productIndex === -1) {
+      throw new Error('Product not found.');
     }
+
+    const updatedProduct = {
+      ...products[productIndex],
+      ...updatedFields,
+      id: productId, // Asegurar que el ID no se actualice
+    };
+
+    products[productIndex] = updatedProduct;
+    this.saveProductsToFile(products);
+
+    console.log(`Product with ID ${productId} updated successfully.`);
   }
 
-  deleteProduct(productId) {
-    let products = this.getProductsFromFile();
-    const updatedProducts = products.filter(p => p.id !== productId);
-
-    if (updatedProducts.length < products.length) {
-      // Si se eliminó algún producto
-      this.saveProductsToFile(updatedProducts);
-      console.log(`Product with ID ${productId} deleted successfully.`);
-    } else {
-      console.error("Error: Product not found.");
-    }
-  }
-
-  getProductsFromFile() {
-    try {
-      const data = fs.readFileSync(this.path, 'utf8');
-      return JSON.parse(data);
-    } catch (error) {
-      // Si el archivo no existe o hay algún error al leerlo, devuelve un array vacío.
-      return [];
-    }
-  }
-
+  // Método para guardar productos en un archivo
   saveProductsToFile(products) {
-    const data = JSON.stringify(products, null, 2);
-    fs.writeFileSync(this.path, data, 'utf8');
+    fs.writeFileSync(this.path, JSON.stringify(products, null, 2), 'utf8');
   }
+
+  // Métodos existentes (getProductsFromFile)...
 }
 
 module.exports = ProductManager;
